@@ -1,7 +1,7 @@
 const { prompt } = require('inquirer');
 const inquirer = require('inquirer');
-// const fs = require('fs');
-// const generatePage = require('./src/page-template');
+const { writeFile, copyFile } = require('./utils/generate-site.js');
+const generatePage = require('./src/page-template');
 
 // const pageHTML = generatePage(name, github);
 
@@ -13,6 +13,7 @@ const inquirer = require('inquirer');
 
 // console.log(inquirer);
 
+// We ask the user for their information with inquirer prompts, this returns all of the data as an object in Promise
 const promptUser = () => {
 return inquirer.prompt([
         {
@@ -62,6 +63,12 @@ return inquirer.prompt([
     ]);
 };
 
+// this function captures the returning data from promptUser() *we can call recursively based on how many projects we want to include*
+// each project will be pushed into a projects array in the collection of portfolio information, and when we're done, the final set of data is returned to the next .then()
+// The finished portfolio data object is returned as porfolioData and sent into the generatePage() function, which will return the finised HTML template code into pageHTML
+// We pass pageHTML into the newly created writeFile() function, which returns a Promise. This is why we use return here, so the promise is returned into the next .then() method
+// upon a successful file creation, we take the writeFileResponse object provided by the writeFile() function's resolve() execution to log it, and then we return copyFile()
+// The Promise returned by copyFile() then lets us know if the CSS file was copied correctly
 const promptProject = portfolioData => {
     
     console.log(`
@@ -140,7 +147,21 @@ const promptProject = portfolioData => {
 };
 
 promptUser()
-.then(promptProject)
-.then(portfolioData => {
-    console.log(portfolioData);
+    .then(promptProject)
+    .then(portfolioData => {
+        return generatePage(portfolioData);
+    })
+    .then(pageHTML => {
+        return writeFile(pageHTML);
+    })
+    .then(writeFileResponse => {
+        console.log(writeFileResponse);
+        return copyFile();
+    })
+    .then(copyFileResponse =>{
+        console.log(copyFileResponse);
+    })
+    .catch(err => {
+    console.log(err);
 });
+    
